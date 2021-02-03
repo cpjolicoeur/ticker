@@ -63,7 +63,7 @@ func NewModel(config cli.Config, client *resty.Client) Model {
 		ready:           false,
 		requestInterval: 3,
 		getQuotes:       quote.GetQuotes(*client, symbols),
-		getPositions:    position.GetPositions(aggregatedLots),
+		getPositions:    position.GetPositions(aggregatedLots, config.ShowLotTotal),
 		watchlist:       watchlist.NewModel(config.Separate, config.ExtraInfoExchange, config.ExtraInfoFundamentals),
 		summary:         summary.NewModel(),
 	}
