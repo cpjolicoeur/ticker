@@ -19,14 +19,14 @@ func removeFormatting(text string) string {
 }
 
 var _ = Describe("Watchlist", func() {
-	describe := func(desc string) func(bool, bool, float64, Position, string) string {
-		return func(isActive bool, isRegularTradingSession bool, change float64, position Position, expected string) string {
+	describe := func(desc string) func(bool, bool, bool, float64, Position, string) string {
+		return func(isActive bool, isRegularTradingSession bool, showPositionTotals bool, change float64, position Position, expected string) string {
 			return fmt.Sprintf("%s expected:%s", desc, expected)
 		}
 	}
 
 	DescribeTable("should render a watchlist",
-		func(isActive bool, isRegularTradingSession bool, change float64, position Position, expected string) {
+		func(isActive bool, isRegularTradingSession bool, showPositionTotals bool, change float64, position Position, expected string) {
 
 			var positionMap map[string]Position
 			if (position == Position{}) {
@@ -59,6 +59,7 @@ var _ = Describe("Watchlist", func() {
 			describe("gain"),
 			true,
 			true,
+			false,
 			0.05,
 			Position{},
 			strings.Join([]string{
@@ -70,6 +71,7 @@ var _ = Describe("Watchlist", func() {
 			describe("loss"),
 			true,
 			true,
+			false,
 			-0.05,
 			Position{},
 			strings.Join([]string{
@@ -80,6 +82,7 @@ var _ = Describe("Watchlist", func() {
 		Entry(
 			describe("gain, after hours"),
 			true,
+			false,
 			false,
 			0.05,
 			Position{},
@@ -92,6 +95,7 @@ var _ = Describe("Watchlist", func() {
 			describe("position, gain"),
 			true,
 			true,
+			false,
 			0.05,
 			Position{
 				AggregatedLot: AggregatedLot{
@@ -99,9 +103,9 @@ var _ = Describe("Watchlist", func() {
 					Quantity: 100.0,
 					Cost:     100.0,
 				},
-				Value:            105.0,
-				DayChange:        5.0,
-				DayChangePercent: 5.0,
+				Value:         105.0,
+				ChangeValue:   5.0,
+				ChangePercent: 5.0,
 			},
 			strings.Join([]string{
 				"AAPL                       ⦿                     105.00                     1.05",
@@ -112,6 +116,7 @@ var _ = Describe("Watchlist", func() {
 			describe("position, loss"),
 			true,
 			true,
+			false,
 			-0.05,
 			Position{
 				AggregatedLot: AggregatedLot{
@@ -119,9 +124,9 @@ var _ = Describe("Watchlist", func() {
 					Quantity: 100.0,
 					Cost:     100.0,
 				},
-				Value:            95.0,
-				DayChange:        -5.0,
-				DayChangePercent: -5.0,
+				Value:         95.0,
+				ChangeValue:   -5.0,
+				ChangePercent: -5.0,
 			},
 			strings.Join([]string{
 				"AAPL                       ⦿                      95.00                     0.95",
@@ -132,6 +137,7 @@ var _ = Describe("Watchlist", func() {
 			describe("position, closed market"),
 			false,
 			false,
+			false,
 			0.0,
 			Position{
 				AggregatedLot: AggregatedLot{
@@ -139,9 +145,9 @@ var _ = Describe("Watchlist", func() {
 					Quantity: 100.0,
 					Cost:     100.0,
 				},
-				Value:            95.0,
-				DayChange:        0.0,
-				DayChangePercent: 0.0,
+				Value:         95.0,
+				ChangeValue:   0.0,
+				ChangePercent: 0.0,
 			},
 			strings.Join([]string{
 				"AAPL                                              95.00                     1.00",
@@ -376,6 +382,43 @@ var _ = Describe("Watchlist", func() {
 				}, "\n")
 				Expect(removeFormatting(m.View())).To(Equal(expected))
 			})
+		})
+	})
+
+	When("the option for showing lot totals is set", func() {
+		It("should render position totals", func() {
+			m := NewModel(false, false, false)
+			m.Width = 80
+			m.Quotes = []Quote{
+				{
+					ResponseQuote: ResponseQuote{
+						Symbol:    "AAPL",
+						ShortName: "Apple Inc.",
+					},
+					Price:                   1.50,
+					Change:                  0.00,
+					ChangePercent:           0.00,
+					IsActive:                false,
+					IsRegularTradingSession: false,
+				},
+			}
+			m.Positions = map[string]Position{
+				"AAPL": {
+					AggregatedLot: AggregatedLot{
+						Symbol:   "AAPL",
+						Quantity: 10.0,
+						Cost:     10.00,
+					},
+					Value:         15.0,
+					ChangeValue:   5.0,
+					ChangePercent: 50.0,
+				},
+			}
+			expected := strings.Join([]string{
+				"AAPL                                              15.00                     1.50",
+				"Apple Inc.                             ↑ 5.00  (50.00%)            0.00  (0.00%)",
+			}, "\n")
+			Expect(removeFormatting(m.View())).To(Equal(expected))
 		})
 	})
 

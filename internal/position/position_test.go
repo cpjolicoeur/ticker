@@ -76,7 +76,7 @@ var _ = Describe("Position", func() {
 					Change: 0.0,
 				},
 			}
-			output := GetPositions(inputAggregatedLots)(inputQuotes)
+			output := GetPositions(inputAggregatedLots, false)(inputQuotes)
 			expected := map[string]Position{
 				"ARKW": {
 					AggregatedLot: AggregatedLot{
@@ -84,9 +84,9 @@ var _ = Describe("Position", func() {
 						Cost:     6090,
 						Quantity: 40,
 					},
-					Value:            8000,
-					DayChange:        2000,
-					DayChangePercent: 50,
+					Value:         8000,
+					ChangeValue:   2000,
+					ChangePercent: 50,
 				},
 			}
 			Expect(output).To(Equal(expected))
